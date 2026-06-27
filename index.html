@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Pod Dashboard</title>
+    <!-- Load the MQTT library for browsers -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+
+<body>
+
+    <h1>Pod Status Update</h1>
+
+    <p><strong>Status:</strong> <span id="status">Waiting for data...</span></p>
+    <p><strong>Current Terminal:</strong> <span id="current">-</span></p>
+    <p><strong>Next Terminal:</strong> <span id="next">-</span></p>
+    <p><strong>ETA:</strong> <span id="eta">-</span></p>
+    <p><strong>Passengers:</strong> <span id="passengers">-</span></p>
+
+    <script>
+        // Connect to the public MQTT broker
+        const brokerUrl = "wss://broker.emqx.io:8084/mqtt";
+        const topic = "secretcompany/pods/updates";
+
+        const client = mqtt.connect(brokerUrl);
+
+        client.on("connect", () => {
+            console.log("Connected to MQTT Broker");
+            client.subscribe(topic);
+        });
+
+        client.on("message", (receivedTopic, message) => {
+            try {
+                // Parse the incoming JSON data
+                const data = JSON.parse(message.toString());
+
+                // Update the text on the page
+                document.getElementById("status").innerText = data.status;
+                document.getElementById("current").innerText = data.current_terminal;
+                document.getElementById("next").innerText = data.next_terminal;
+                document.getElementById("eta").innerText = data.eta_minutes + " minutes";
+                document.getElementById("passengers").innerText = data.occupancy + " / " + data.max_capacity;
+
+            } catch (e) {
+                console.error("Error reading message", e);
+            }
+        });
+    </script>
+
+    <h2>check the readme of this repo to see how to start the simulator for this mqtt pipeline</h2>
+
+</body>
+
+</html>
